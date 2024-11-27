@@ -37,7 +37,12 @@ rows between 2 preceding and current row),2) as rolling_avg_3d
 FROM tweets
 
 ---ex6
-
+select count(*) payment_count from (
+SELECT merchant_id, credit_card_id, amount, transaction_timestamp,
+lag(transaction_timestamp) over (partition by merchant_id,credit_card_id,amount order by transaction_timestamp) as previous_timestamp,
+(extract(epoch from transaction_timestamp) - extract(epoch from lag(transaction_timestamp) over (partition by merchant_id,credit_card_id,amount order by transaction_timestamp)))/60 as diff
+FROM transactions) a
+where diff <= 10
 
 ---ex7
 select category,product, total_spend from (
