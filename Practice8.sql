@@ -66,7 +66,24 @@ from(
 offset 6
 
 ---ex5
+with draft1 as (
+select *,concat(lat,lon) as latlon
+from insurance),
+draft2 as (
+select a.tiv_2016 from draft1 as a
+left join draft1 as b on a.pid = b.pid
+where a.latlon in (
+     select latlon
+     from draft1
+     group by latlon
+     having count(latlon) = 1) and 
+    a.tiv_2015 in (
+     select tiv_2015
+     from draft1
+     group by tiv_2015
+     having count(tiv_2015) > 1))
 
+select round(sum(tiv_2016)::numeric,2) as tiv_2016 from draft2
 
 ---ex6
 select Department, Employee, Salary from (
