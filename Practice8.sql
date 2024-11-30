@@ -35,7 +35,25 @@ from first_login
 where event_date - interval '1 day' = first_event_date
 
 ---ex3
+select id, concat(student1, student2) as student from (
+select id, case when id % 2 = 1 then lead else lag end as student1,
+case when id = (select id from Seat order by id desc limit 1) and id % 2 = 1 then student else null end as student2
+from (
+select *, lead(student) over (order by id),
+lag(student) over (order by id)
+from Seat))
+/* nếu để order by student thì nó sẽ xếp theo abcd*/
 
+---ex3(2) - explain, check it again
+ select id, 
+    coalesce(
+        case
+            when id % 2 != 0 then lead(student) over ()
+            else lag(student) over ()
+        end,
+        student
+    ) as student
+from seat
 
 ---ex4
 select visited_on,
@@ -59,7 +77,43 @@ left join Department b on a.departmentId = b.id) a
 where dense_rank in (1,2,3)
 
 ---ex7
-
+select person_name from (
+select person_name, turn,
+sum(weight) over (order by turn) as sum
+from Queue) a
+where sum <= 1000
+order by sum desc 
+limit 1
 
 ---ex8
+with draft1 as (
+select product_id, new_price as price from (
+select *,
+max(change_date) over (partition by product_id)
+from Products 
+where change_date <= '2019-08-16')
+where change_date = max),
+ 
+draft2 as (
+select distinct product_id, price from (
+select *,
+case 
+when change_date > '2019-08-16' then 10 else new_price end as price
+from Products
+where product_id not in (select product_id from Products where change_date <= '2019-08-16')))
+
+
+select product_id, price from draft1
+union all
+select product_id, price from draft2
+
+---ex8(2)
+select product_id, new_price as price from products
+where (product_id,change_date) in (select product_id,max(change_date) from products where change_date <= '2019-08-16' group by product_id)
+
+union
+
+select product_id, 10 as price from products
+where product_id not in (select product_id from products where change_date <= '2019-08-16')
+
 
